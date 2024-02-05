@@ -114,10 +114,10 @@ class ResNet(nn.Module):
 
 
 
-def resnet18(num_classes):
+def resnet18(num_classes=10):
     """Constructs a ResNet-18 model."""
     model = ResNet(block=BasicBlock, 
                    layers=[2, 2, 2, 2],
-                   num_classes=10,
+                   num_classes=num_classes,
                    grayscale=False)
     return model
