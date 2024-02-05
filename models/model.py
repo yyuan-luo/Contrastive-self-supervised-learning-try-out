@@ -107,7 +107,7 @@ class ResNet(nn.Module):
         # because MNIST is already 1x1 here:
         # disable avg pooling
         #x = self.avgpool(x)
-        x = F.avg_pool2d(x, 4)
+        x = F.avg_pool2d(x, 2)
         x = x.view(x.size(0), -1) # features from decoder
         x = self.projection_head(x) # projection_head
         return x
