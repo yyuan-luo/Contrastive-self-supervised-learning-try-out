@@ -121,3 +121,15 @@ def resnet18(num_classes=10):
                    num_classes=num_classes,
                    grayscale=False)
     return model
+ 
+ 
+class simnet(nn.Module):
+   def __init__(self, num_features=64, num_classes=10) -> None:
+      super().__init__()
+      self.input_dim = num_features
+      self.num_classes = num_classes
+      
+      self.layer = nn.Linear(self.input_dim, self.num_classes)
+    
+   def forward(self, x):
+      return self.layer(x)
