@@ -10,7 +10,7 @@ from data.dataset import CIFAR10C
 from models.loss import NTXentLoss
 from models.model import resnet18, simnet
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 train_dataset = CIFAR10C("./data", train=True, download=True, transform=train_transformations())
@@ -22,16 +22,16 @@ model = resnet18()
 classifier = simnet()
 optimizer = optim.Adam(model.parameters(), lr=0.1, weight_decay=0.05)
 
-train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True)
-trainc_loader = DataLoader(trainc_dataset, batch_size=128, shuffle=True)
-test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+trainc_loader = DataLoader(trainc_dataset, batch_size=4, shuffle=True)
+test_loader = DataLoader(dataset=test_dataset, batch_size=4, shuffle=True)
 
 def train(epoch):
    total_loss = 0.0
    tqdm_bar = tqdm(train_loader)
    for idx, (xi, xj, _) in enumerate(tqdm_bar):
-      xi.to(device)
-      xj.to(device)
+      xi = xi.to(device)
+      xj = xj.to(device)
       model.zero_grad()
       rep1 = model(xi)
       rep2 = model(xj)
@@ -47,8 +47,8 @@ def train_classifier(epoch):
    tqdm_bar = tqdm(trainc_loader)
    for idx, (img, label) in enumerate(tqdm_bar):
       classifier.zero_grad()
-      img.to(device)
-      label.to(device)
+      img = img.to(device)
+      label = label.to(device)
       feature = model(img)
       out = classifier(feature)
       loss = cross_entropy(out, label)
@@ -66,8 +66,8 @@ def test():
    with torch.no_grad():
       for idx, (img, label) in enumerate(tqdm_bar):
          classifier.zero_grad()
-         img.to(device)
-         label.to(device)
+         img = img.to(device)
+         label = label.to(device)
          feature = model(img)
          out = classifier(feature)
          loss = cross_entropy(out, label)
@@ -80,6 +80,8 @@ def test():
          tqdm_bar.set_description('{} Loss: {:.4f} Avg Acc: {:.4f}'.format("Testing", loss.item(), total_acc/(idx + 1)))
          
 if __name__ == "__main__":
+   model.to(device)
+   classifier.to(device)
    for epoch in range(1):
       train(epoch)
    optimizer = optim.Adam(classifier.parameters(), lr=0.1, weight_decay=0.05)
