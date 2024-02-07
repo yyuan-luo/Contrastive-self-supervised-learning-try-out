@@ -63,20 +63,21 @@ def test():
    model.eval()
    classifier.eval()
    tqdm_bar = tqdm(test_loader)
-   for idx, (img, label) in enumerate(tqdm_bar):
-      classifier.zero_grad()
-      img.to(device)
-      label.to(device)
-      feature = model(img)
-      out = classifier(feature)
-      loss = cross_entropy(out, label)
-      pred = out.max(dim=1)[1]
-      correct = pred.eq(label).sum().item()
-      correct /= label.size(0)
-      batch_acc = (correct * 100)
-      total_acc += batch_acc
-      total_loss += loss.item()
-      tqdm_bar.set_description('{} Loss: {:.4f} Avg Acc: {:.4f}'.format("Testing", loss.item(), total_acc/(idx + 1)))
+   with torch.no_grad():
+      for idx, (img, label) in enumerate(tqdm_bar):
+         classifier.zero_grad()
+         img.to(device)
+         label.to(device)
+         feature = model(img)
+         out = classifier(feature)
+         loss = cross_entropy(out, label)
+         pred = out.max(dim=1)[1]
+         correct = pred.eq(label).sum().item()
+         correct /= label.size(0)
+         batch_acc = (correct * 100)
+         total_acc += batch_acc
+         total_loss += loss.item()
+         tqdm_bar.set_description('{} Loss: {:.4f} Avg Acc: {:.4f}'.format("Testing", loss.item(), total_acc/(idx + 1)))
          
 if __name__ == "__main__":
    for epoch in range(1):
