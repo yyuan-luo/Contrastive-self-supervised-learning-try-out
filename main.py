@@ -10,7 +10,7 @@ from data.dataset import CIFAR10C
 from models.loss import NTXentLoss
 from models.model import resnet18, simnet
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print(device)
 
 train_dataset = CIFAR10C("./data", train=True, download=True, transform=train_transformations())
@@ -18,13 +18,13 @@ test_dataset = datasets.CIFAR10("./data", train=False, download=False, transform
 trainc_dataset = datasets.CIFAR10("./data", train=True, download=False, transform=test_transformations())
 loss_func = NTXentLoss()
 cross_entropy = nn.CrossEntropyLoss()
-model = resnet18()
-classifier = simnet()
+model = resnet18().to(device)
+classifier = simnet().to(device)
 optimizer = optim.Adam(model.parameters(), lr=0.1, weight_decay=0.05)
 
-train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-trainc_loader = DataLoader(trainc_dataset, batch_size=4, shuffle=True)
-test_loader = DataLoader(dataset=test_dataset, batch_size=4, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=512, shuffle=True)
+trainc_loader = DataLoader(trainc_dataset, batch_size=512, shuffle=True)
+test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True)
 
 def train(epoch):
    total_loss = 0.0
@@ -80,10 +80,9 @@ def test():
          tqdm_bar.set_description('{} Loss: {:.4f} Avg Acc: {:.4f}'.format("Testing", loss.item(), total_acc/(idx + 1)))
          
 if __name__ == "__main__":
-   model.to(device)
-   classifier.to(device)
-   for epoch in range(1):
+   for epoch in range(5):
       train(epoch)
+   torch.save(model.state_dict(), './mode.pth')
    optimizer = optim.Adam(classifier.parameters(), lr=0.1, weight_decay=0.05)
    for epoch in range(1):
       train_classifier(epoch)
