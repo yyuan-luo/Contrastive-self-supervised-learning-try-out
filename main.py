@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,19 +13,6 @@ from models.model import resnet18, simnet
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print(device)
-
-train_dataset = CIFAR10C("./data", train=True, download=True, transform=train_transformations())
-test_dataset = datasets.CIFAR10("./data", train=False, download=False, transform=test_transformations())
-trainc_dataset = datasets.CIFAR10("./data", train=True, download=False, transform=test_transformations())
-loss_func = NTXentLoss()
-cross_entropy = nn.CrossEntropyLoss()
-model = resnet18().to(device)
-classifier = simnet().to(device)
-optimizer = optim.Adam(model.parameters(), lr=0.1, weight_decay=0.05)
-
-train_loader = DataLoader(train_dataset, batch_size=512, shuffle=True)
-trainc_loader = DataLoader(trainc_dataset, batch_size=512, shuffle=True)
-test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True)
 
 def train(epoch):
    total_loss = 0.0
@@ -80,12 +68,31 @@ def test():
          tqdm_bar.set_description('{} Loss: {:.4f} Avg Acc: {:.4f}'.format("Testing", loss.item(), total_acc/(idx + 1)))
          
 if __name__ == "__main__":
+   train_dataset = CIFAR10C("./data", train=True, download=True, transform=train_transformations())
+   test_dataset = datasets.CIFAR10("./data", train=False, download=False, transform=test_transformations())
+   trainc_dataset = datasets.CIFAR10("./data", train=True, download=False, transform=test_transformations())
+   loss_func = NTXentLoss()
+   cross_entropy = nn.CrossEntropyLoss()
+   model = resnet18().to(device)
+   classifier = simnet().to(device)
+   optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.05)
+
+   train_loader = DataLoader(train_dataset, batch_size=512, shuffle=True)
+   trainc_loader = DataLoader(trainc_dataset, batch_size=512, shuffle=True)
+   test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True)
+   if os.path.exists('./model.pth'):
+      model.load_state_dict(torch.load("./model.pth"))
+   if os.path.exists('./classifier.pth'):
+      classifier.load_state_dict(torch.load('./classifier.pth'))
+   # train encoder
    for epoch in range(5):
       train(epoch)
-   torch.save(model.state_dict(), './mode.pth')
-   optimizer = optim.Adam(classifier.parameters(), lr=0.1, weight_decay=0.05)
-   for epoch in range(1):
+   torch.save(model.state_dict(), './model.pth')
+   # train classifier
+   optimizer = optim.Adam(classifier.parameters(), lr=1, weight_decay=0.05)
+   for epoch in range(5):
       train_classifier(epoch)
-   
+   torch.save(classifier.state_dict(), './classifier.pth')
+   # test
    test()
    

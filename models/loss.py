@@ -7,7 +7,7 @@ class NTXentLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, rep1, rep2, temperature=0.5):
+    def forward(self, rep1, rep2, temperature=0.1):
         normalized_rep1 = F.normalize(rep1)
         normalized_rep2 = F.normalize(rep2)
         dis_matrix = torch.mm(normalized_rep1, normalized_rep2.T)/temperature
