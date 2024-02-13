@@ -11,10 +11,11 @@ from data.dataset import CIFAR10C
 from models.loss import NTXentLoss
 from models.model import resnet18, simnet
 
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 def train(epoch):
+   print("Pretraining")
    total_loss = 0.0
    tqdm_bar = tqdm(train_loader)
    for idx, (xi, xj, _) in enumerate(tqdm_bar):
@@ -30,6 +31,7 @@ def train(epoch):
       tqdm_bar.set_description('{} Epoch: [{}] Loss: {:.4f}'.format("Training", epoch, loss.item()))
 
 def train_classifier(epoch):
+   print("Downstream Task Training")
    total_loss = 0.0
    model.eval()
    tqdm_bar = tqdm(trainc_loader)
@@ -75,22 +77,22 @@ if __name__ == "__main__":
    cross_entropy = nn.CrossEntropyLoss()
    model = resnet18().to(device)
    classifier = simnet().to(device)
-   optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.05)
+   optimizer = optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.05)
 
-   train_loader = DataLoader(train_dataset, batch_size=512, shuffle=True)
-   trainc_loader = DataLoader(trainc_dataset, batch_size=512, shuffle=True)
+   train_loader = DataLoader(train_dataset, batch_size=1024, shuffle=True)
+   trainc_loader = DataLoader(trainc_dataset, batch_size=64, shuffle=True)
    test_loader = DataLoader(dataset=test_dataset, batch_size=64, shuffle=True)
    if os.path.exists('./model.pth'):
       model.load_state_dict(torch.load("./model.pth"))
    if os.path.exists('./classifier.pth'):
       classifier.load_state_dict(torch.load('./classifier.pth'))
    # train encoder
-   for epoch in range(5):
+   for epoch in range(10):
       train(epoch)
    torch.save(model.state_dict(), './model.pth')
    # train classifier
-   optimizer = optim.Adam(classifier.parameters(), lr=1, weight_decay=0.05)
-   for epoch in range(5):
+   optimizer = optim.SGD(classifier.parameters(), lr=1, momentum=0.5)
+   for epoch in range(10):
       train_classifier(epoch)
    torch.save(classifier.state_dict(), './classifier.pth')
    # test
